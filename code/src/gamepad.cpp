@@ -11,6 +11,8 @@ WebServer server(80);
 
 int joy_x = 0;
 int joy_y = 0;
+int calibration[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+bool calibration_mode = false;
 
 float progress = 0;
 float period = 450;
@@ -26,11 +28,169 @@ float phase[] =         {0,   0,   0,   0,   0,   0,   0,   0};
 
 
 void handleRoot() {
+    calibration_mode = false;
+    joy_x = 0;
+    joy_y = 0;
+    robot.home();
     server.send(200, "text/html", gamepad_html);
+}
+
+void copyRobotCalibration() {
+    for (int i = 0; i < 8; i++) {
+        calibration[i] = robot.calibration[i];
+    }
+}
+
+void updateServo(int i){
+    if (i >= 0 && i < 8){
+        robot.setCalibration(calibration);
+        robot.setServo(i, 90);
+    }
+}
+
+String calibrationHtml() {
+    String html = R"rawliteral(
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="utf-8" />
+        <title>Calibration</title>
+        <style>
+        body {
+            background-color: #121212;
+            color: #f0f0f0;
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #ff3535;
+        }
+        .servo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin: 30px 0;
+        }
+        .servo-box {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .servo-title {
+            margin-bottom: 10px;
+            font-size: 1.1em;
+        }
+        .value {
+            font-size: 1.5em;
+            margin: 10px 0;
+        }
+        .btn {
+            font-size: 1.5em;
+            text-decoration: none;
+            padding: 8px 14px;
+            margin: 5px;
+            background: #ff3535;
+            color: white;
+            border-radius: 8px;
+            transition: background 0.3s;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #ff5959;
+        }
+        pre {
+            background: #1e1e1e;
+            padding: 10px;
+            border-radius: 8px;
+            color: #f0f0f0;
+            font-size: 1.1em;
+        }
+        </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <h1>Calibration</h1>
+        <a class="btn" href="/" style="font-size: 1em;">Gamepad</a>
+        <div class="servo-grid">
+    )rawliteral";
+
+    for (int i = 0; i < 8; i++) {
+        html += "<div class='servo-box'>";
+        html += "<div class='servo-title'>Servo " + String(i) + "</div>";
+        html += "<a class='btn' href='/calibration/increase?i=" + String(i) + "'>&#9650;</a>";
+        html += "<div class='value'>" + String(calibration[i]) + "</div>";
+        html += "<a class='btn' href='/calibration/decrease?i=" + String(i) + "'>&#9660;</a>";
+        html += "</div>";
+    }
+
+    html += "</div>";
+    html += "<a class='btn' href='/calibration/load' style='width: 180px; margin: 0 10px;'>Load</a>";
+    html += "<a class='btn' href='/calibration/save' style='width: 180px; margin: 0 10px;'>Save</a>";
+
+    html += R"rawliteral(
+        <h3 style="margin-top: 50px;">Generated calibration array</h3>
+        <pre>int servo_calibration[8] = {)rawliteral";
+
+    for (int i = 0; i < 8; i++) {
+        html += String(calibration[i]);
+        if (i < 7) html += ", ";
+    }
+
+    html += R"rawliteral(};</pre>
+        </body>
+        </html>
+        )rawliteral";
+
+    return html;
+}
+
+void handleCalibration() {
+    calibration_mode = true;
+    joy_x = 0;
+    joy_y = 0;
+    server.send(200, "text/html", calibrationHtml());
+}
+
+void handleCalibrationLoad(){
+    int* loaded = robot.loadCalibration();
+    if (loaded != nullptr){
+        copyRobotCalibration();
+        for (int i = 0; i < 8; i++){
+            updateServo(i);
+        }
+    }
+    handleCalibration();
+}
+
+void handleCalibrationSave(){
+    robot.saveCalibration(calibration);
+    robot.setCalibration(calibration);
+    handleCalibration();
+}
+
+void handleCalibrationIncrease(){
+    int i = server.hasArg("i") ? server.arg("i").toInt() : -1;
+    if (i >= 0 && i < 8){
+        calibration[i]++;
+        updateServo(i);
+    }
+    handleCalibration();
+}
+
+void handleCalibrationDecrease(){
+    int i = server.hasArg("i") ? server.arg("i").toInt() : -1;
+    if (i >= 0 && i < 8){
+        calibration[i]--;
+        updateServo(i);
+    }
+    handleCalibration();
 }
 
 void handleJoystick() {
     if (server.hasArg("x") && server.hasArg("y")) {
+        calibration_mode = false;
         joy_x = server.arg("x").toInt();
         joy_y = server.arg("y").toInt();
         server.send(200, "text/plain", "OK");
@@ -41,6 +201,7 @@ void handleJoystick() {
 
 void handleButton() {
     if (server.hasArg("label")) {
+        calibration_mode = false;
         String label = server.arg("label");
         Serial.println(label);
         if (label == "A") {
@@ -79,9 +240,16 @@ void setup() {
     MDNS.begin(HOSTNAME);
     
     robot.init();
+    copyRobotCalibration();
     robot.home();
 
     server.on("/", handleRoot);
+    server.on("/calibration", handleCalibration);
+    server.on("/calibration/", handleCalibration);
+    server.on("/calibration/increase", handleCalibrationIncrease);
+    server.on("/calibration/decrease", handleCalibrationDecrease);
+    server.on("/calibration/load", handleCalibrationLoad);
+    server.on("/calibration/save", handleCalibrationSave);
     server.on("/joystick", handleJoystick);
     server.on("/button", handleButton);
     server.begin();
@@ -89,6 +257,10 @@ void setup() {
 
 void loop() {
     server.handleClient();
+
+    if (calibration_mode) {
+        return;
+    }
 
     progress += robot.oscillator[0].getPhaseProgress();
     while (progress > 360)

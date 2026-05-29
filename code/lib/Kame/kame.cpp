@@ -56,6 +56,7 @@ int* Kame::loadCalibration(){
 void Kame::saveCalibration(int new_calibration[8]){
     if (NVS.begin()){
         for (int i = 0; i < 8; i++){
+            calibration[i] = new_calibration[i];
             NVS.setInt("servo" + String(i), calibration[i]);
         }
     }

@@ -150,6 +150,7 @@ String gamepad_html = R"rawliteral(
         <div id="bottom-buttons">
             <button class="bottom" onclick="handleButton('Start')">Start</button>
             <button class="bottom" onclick="handleButton('Stop')">Stop</button>
+            <button class="bottom" onclick="window.location.href='/calibration'">Calibration</button>
         </div>
     </div>
 
