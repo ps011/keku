@@ -54,83 +54,270 @@ String calibrationHtml() {
     <html lang="es">
     <head>
         <meta charset="utf-8" />
-        <title>Calibration</title>
+        <title>Kame32 Calibration</title>
         <style>
+        :root {
+            --font-sans: "DM Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --background: #eff6ff;
+            --foreground: #000000;
+            --main: #3b82f6;
+            --main-foreground: #ffffff;
+            --secondary-background: #ffffff;
+            --border: #000000;
+            --muted-foreground: #333333;
+            --radius: 5px;
+            --shadow: 4px 4px 0px 0px var(--border);
+            --shadow-sm: 2px 2px 0px 0px var(--border);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            background-color: #121212;
-            color: #f0f0f0;
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            text-align: center;
+            min-height: 100vh;
+            margin: 0;
+            color: var(--foreground);
+            font-family: var(--font-sans);
+            background:
+                radial-gradient(circle at 1px 1px, rgba(0,0,0,0.14) 1px, transparent 0),
+                var(--background);
+            background-size: 22px 22px;
+            padding: 18px;
         }
+
+        .app {
+            width: min(1120px, 100%);
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px;
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--secondary-background);
+            box-shadow: var(--shadow);
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
         h1 {
-            color: #ff3535;
+            margin: 0;
+            font-size: clamp(24px, 5vw, 42px);
+            line-height: 0.95;
+            font-weight: 800;
         }
+
+        .subtitle {
+            color: var(--muted-foreground);
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
         .servo-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-            margin: 30px 0;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
         }
+
         .servo-box {
-            background: #1e1e1e;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            background: var(--secondary-background);
+            padding: 14px;
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
+
         .servo-title {
-            margin-bottom: 10px;
-            font-size: 1.1em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 800;
         }
+
+        .servo-title span {
+            color: var(--muted-foreground);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
         .value {
-            font-size: 1.5em;
-            margin: 10px 0;
+            min-height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--background);
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            font-size: 32px;
+            font-weight: 900;
         }
-        .btn {
-            font-size: 1.5em;
+
+        .servo-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn,
+        .nav-button {
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             text-decoration: none;
-            padding: 8px 14px;
-            margin: 5px;
-            background: #ff3535;
-            color: white;
-            border-radius: 8px;
-            transition: background 0.3s;
-            display: inline-block;
+            padding: 10px 14px;
+            background: var(--main);
+            color: var(--main-foreground);
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            font-size: 15px;
+            font-weight: 800;
+            transition: transform 0.08s ease, box-shadow 0.08s ease;
         }
-        .btn:hover {
-            background: #ff5959;
+
+        .btn:active,
+        .nav-button:active {
+            transform: translate(4px, 4px);
+            box-shadow: none;
         }
+
+        .btn.secondary,
+        .nav-button {
+            background: var(--secondary-background);
+            color: var(--foreground);
+        }
+
+        .btn strong,
+        .nav-button strong {
+            display: block;
+            line-height: 1;
+        }
+
+        .btn span,
+        .nav-button span {
+            display: block;
+            color: currentColor;
+            font-size: 11px;
+            font-weight: 900;
+            line-height: 1;
+            opacity: 0.78;
+            text-transform: uppercase;
+        }
+
+        .page-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .code-panel {
+            background: var(--secondary-background);
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 14px;
+        }
+
+        .code-title {
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: 800;
+        }
+
         pre {
-            background: #1e1e1e;
-            padding: 10px;
-            border-radius: 8px;
-            color: #f0f0f0;
-            font-size: 1.1em;
+            margin: 0;
+            padding: 12px;
+            overflow-x: auto;
+            background: var(--background);
+            color: var(--foreground);
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        @media (max-width: 860px) {
+            .servo-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .topbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 520px) {
+            body {
+                padding: 12px;
+            }
+
+            .servo-grid,
+            .servo-actions {
+                grid-template-columns: 1fr;
+            }
         }
         </style>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
     </head>
     <body>
-        <h1>Calibration</h1>
-        <a class="btn" href="/" style="font-size: 1em;">Gamepad</a>
+        <main class="app">
+        <header class="topbar">
+            <div class="brand">
+                <h1>Kame32</h1>
+                <div class="subtitle">Servo calibration</div>
+            </div>
+            <a class="nav-button" href="/">
+                <strong>Gamepad</strong>
+                <span>Control</span>
+            </a>
+        </header>
         <div class="servo-grid">
     )rawliteral";
 
     for (int i = 0; i < 8; i++) {
         html += "<div class='servo-box'>";
-        html += "<div class='servo-title'>Servo " + String(i) + "</div>";
-        html += "<a class='btn' href='/calibration/increase?i=" + String(i) + "'>&#9650;</a>";
+        html += "<div class='servo-title'>Servo " + String(i) + "<span>Trim</span></div>";
         html += "<div class='value'>" + String(calibration[i]) + "</div>";
-        html += "<a class='btn' href='/calibration/decrease?i=" + String(i) + "'>&#9660;</a>";
+        html += "<div class='servo-actions'>";
+        html += "<a class='btn secondary' href='/calibration/decrease?i=" + String(i) + "'><strong>-</strong><span>Decrease</span></a>";
+        html += "<a class='btn' href='/calibration/increase?i=" + String(i) + "'><strong>+</strong><span>Increase</span></a>";
+        html += "</div>";
         html += "</div>";
     }
 
     html += "</div>";
-    html += "<a class='btn' href='/calibration/load' style='width: 180px; margin: 0 10px;'>Load</a>";
-    html += "<a class='btn' href='/calibration/save' style='width: 180px; margin: 0 10px;'>Save</a>";
+    html += "<div class='page-actions'>";
+    html += "<a class='btn secondary' href='/calibration/load'><strong>Load</strong><span>Memory</span></a>";
+    html += "<a class='btn' href='/calibration/save'><strong>Save</strong><span>Memory</span></a>";
+    html += "</div>";
 
     html += R"rawliteral(
-        <h3 style="margin-top: 50px;">Generated calibration array</h3>
+        <section class="code-panel">
+        <div class="code-title">Generated calibration array</div>
         <pre>int servo_calibration[8] = {)rawliteral";
 
     for (int i = 0; i < 8; i++) {
@@ -139,6 +326,8 @@ String calibrationHtml() {
     }
 
     html += R"rawliteral(};</pre>
+        </section>
+        </main>
         </body>
         </html>
         )rawliteral";

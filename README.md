@@ -11,6 +11,8 @@ The `gamepad` PlatformIO environment serves both robot control and servo calibra
 - `/` opens the virtual gamepad.
 - `/calibration` opens the servo calibration page.
 
+The embedded pages use a lightweight, dependency-free version of the Prasheel UI visual language.
+
 After uploading `gamepad`, connect to the `Kame32` Wi-Fi access point and open `http://kame32.local/` or the ESP32 access point IP.
 
 # License 
