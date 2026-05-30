@@ -15,6 +15,8 @@ The embedded pages use a lightweight, dependency-free version of the Prasheel UI
 
 After uploading `gamepad`, connect to the `Kame32` Wi-Fi access point and open `http://kame32.local/` or the ESP32 access point IP.
 
+If the normal upload drops the CP2102 serial port, use `gamepad_manual_upload`. Hold the ESP32 `BOOT` button, start upload, release `BOOT` after PlatformIO prints `Connecting...`.
+
 # License 
 This robot is licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](http://creativecommons.org/licenses/by-sa/4.0/).
 
