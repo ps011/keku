@@ -48,6 +48,20 @@ void updateServo(int i){
     }
 }
 
+void appendServoControl(String &html, int id, const char* role, const char* pin, const char* positionClass) {
+    html += "<div class='servo-control ";
+    html += positionClass;
+    html += "'>";
+    html += "<div class='servo-head'><strong>Servo " + String(id) + "</strong><span>" + String(pin) + "</span></div>";
+    html += "<div class='servo-role'>" + String(role) + "</div>";
+    html += "<div class='servo-value'>" + String(calibration[id]) + "</div>";
+    html += "<div class='servo-actions'>";
+    html += "<a class='btn secondary' href='/calibration/decrease?i=" + String(id) + "'><strong>-</strong><span>Decrease</span></a>";
+    html += "<a class='btn' href='/calibration/increase?i=" + String(id) + "'><strong>+</strong><span>Increase</span></a>";
+    html += "</div>";
+    html += "</div>";
+}
+
 String calibrationHtml() {
     String html = R"rawliteral(
     <!DOCTYPE html>
@@ -127,41 +141,232 @@ String calibrationHtml() {
             text-transform: uppercase;
         }
 
-        .servo-grid {
-            display: grid;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
+        .robot-card {
+            background: var(--secondary-background);
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
             gap: 14px;
         }
 
-        .servo-box {
+        .pin-map {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .pin-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-height: 34px;
+            padding: 6px 8px;
+            background: var(--background);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .pin-pill span {
+            color: var(--muted-foreground);
+            white-space: nowrap;
+        }
+
+        .robot-map {
+            position: relative;
+            min-height: 610px;
+            overflow: hidden;
+            background:
+                linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px),
+                #ffffff;
+            background-size: 28px 28px;
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .orientation {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 10px;
+            background: var(--main);
+            color: var(--main-foreground);
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-weight: 900;
+            text-transform: uppercase;
+            z-index: 4;
+        }
+
+        .front-label {
+            top: 12px;
+        }
+
+        .rear-label {
+            bottom: 12px;
             background: var(--secondary-background);
-            padding: 14px;
+            color: var(--foreground);
+        }
+
+        .body-shell {
+            position: absolute;
+            left: 38%;
+            top: 24%;
+            width: 24%;
+            height: 52%;
+            background: #111827;
+            border: 3px solid var(--border);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            z-index: 2;
+        }
+
+        .body-shell::before,
+        .body-shell::after {
+            content: "";
+            position: absolute;
+            left: 14%;
+            right: 14%;
+            height: 10px;
+            background: #d1d5db;
+            border: 2px solid var(--border);
+            border-radius: 999px;
+        }
+
+        .body-shell::before {
+            top: 16px;
+        }
+
+        .body-shell::after {
+            bottom: 16px;
+        }
+
+        .pcb-label {
+            position: absolute;
+            inset: 44px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            border: 2px dashed rgba(255,255,255,0.4);
+            border-radius: 6px;
+            font-size: clamp(18px, 2.4vw, 30px);
+            font-weight: 900;
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+        }
+
+        .leg {
+            position: absolute;
+            height: 58px;
+            width: 28%;
+            background: #374151;
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            z-index: 1;
+        }
+
+        .leg::before,
+        .leg::after {
+            content: "";
+            position: absolute;
+            top: 9px;
+            width: 38px;
+            height: 34px;
+            background: #facc15;
+            border: 3px solid var(--border);
+            border-radius: var(--radius);
+        }
+
+        .leg::before {
+            left: -22px;
+        }
+
+        .leg::after {
+            right: -22px;
+        }
+
+        .leg-left {
+            left: 9%;
+        }
+
+        .leg-right {
+            right: 9%;
+        }
+
+        .leg-front {
+            top: 30%;
+        }
+
+        .leg-rear {
+            top: 65%;
+        }
+
+        .link {
+            position: absolute;
+            width: 17%;
+            height: 10%;
+            background: rgba(250, 204, 21, 0.25);
+            border: 2px solid rgba(0,0,0,0.42);
+            transform-origin: center;
+            z-index: 0;
+        }
+
+        .link-fl { left: 28%; top: 28%; transform: rotate(18deg); }
+        .link-fr { right: 28%; top: 28%; transform: rotate(-18deg); }
+        .link-rl { left: 28%; top: 64%; transform: rotate(-18deg); }
+        .link-rr { right: 28%; top: 64%; transform: rotate(18deg); }
+
+        .servo-control {
+            position: absolute;
+            width: clamp(128px, 15vw, 172px);
+            padding: 10px;
+            background: var(--secondary-background);
             border: 3px solid var(--border);
             border-radius: var(--radius);
             box-shadow: var(--shadow);
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
+            z-index: 5;
         }
 
-        .servo-title {
+        .servo-head {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
-            font-size: 18px;
-            font-weight: 800;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 900;
         }
 
-        .servo-title span {
+        .servo-head span {
             color: var(--muted-foreground);
-            font-size: 11px;
-            font-weight: 800;
-            text-transform: uppercase;
+            font-size: 10px;
+            font-weight: 900;
+            white-space: nowrap;
         }
 
-        .value {
-            min-height: 58px;
+        .servo-role {
+            min-height: 28px;
+            color: var(--muted-foreground);
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.1;
+        }
+
+        .servo-value {
+            min-height: 42px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -169,7 +374,7 @@ String calibrationHtml() {
             border: 3px solid var(--border);
             border-radius: var(--radius);
             box-shadow: var(--shadow-sm);
-            font-size: 32px;
+            font-size: 26px;
             font-weight: 900;
         }
 
@@ -178,6 +383,15 @@ String calibrationHtml() {
             grid-template-columns: 1fr 1fr;
             gap: 10px;
         }
+
+        .servo-front-left-outer { left: 2%; top: 19%; }
+        .servo-front-left-inner { left: 24%; top: 23%; }
+        .servo-front-right-inner { right: 24%; top: 23%; }
+        .servo-front-right-outer { right: 2%; top: 19%; }
+        .servo-rear-left-outer { left: 2%; top: 62%; }
+        .servo-rear-left-inner { left: 24%; top: 58%; }
+        .servo-rear-right-inner { right: 24%; top: 58%; }
+        .servo-rear-right-outer { right: 2%; top: 62%; }
 
         .btn,
         .nav-button {
@@ -260,9 +474,26 @@ String calibrationHtml() {
         }
 
         @media (max-width: 860px) {
-            .servo-grid {
+            .pin-map {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+
+            .robot-map {
+                min-height: 720px;
+            }
+
+            .servo-control {
+                width: 142px;
+            }
+
+            .servo-front-left-outer { left: 2%; top: 15%; }
+            .servo-front-left-inner { left: 2%; top: 34%; }
+            .servo-front-right-inner { right: 2%; top: 34%; }
+            .servo-front-right-outer { right: 2%; top: 15%; }
+            .servo-rear-left-inner { left: 2%; top: 56%; }
+            .servo-rear-left-outer { left: 2%; top: 75%; }
+            .servo-rear-right-inner { right: 2%; top: 56%; }
+            .servo-rear-right-outer { right: 2%; top: 75%; }
 
             .topbar {
                 align-items: flex-start;
@@ -275,9 +506,26 @@ String calibrationHtml() {
                 padding: 12px;
             }
 
-            .servo-grid,
+            .pin-map,
             .servo-actions {
                 grid-template-columns: 1fr;
+            }
+
+            .robot-map {
+                min-height: 980px;
+            }
+
+            .body-shell {
+                left: 34%;
+                width: 32%;
+            }
+
+            .leg {
+                width: 30%;
+            }
+
+            .servo-control {
+                width: min(44vw, 154px);
             }
         }
         </style>
@@ -295,21 +543,47 @@ String calibrationHtml() {
                 <span>Control</span>
             </a>
         </header>
-        <div class="servo-grid">
     )rawliteral";
 
-    for (int i = 0; i < 8; i++) {
-        html += "<div class='servo-box'>";
-        html += "<div class='servo-title'>Servo " + String(i) + "<span>Trim</span></div>";
-        html += "<div class='value'>" + String(calibration[i]) + "</div>";
-        html += "<div class='servo-actions'>";
-        html += "<a class='btn secondary' href='/calibration/decrease?i=" + String(i) + "'><strong>-</strong><span>Decrease</span></a>";
-        html += "<a class='btn' href='/calibration/increase?i=" + String(i) + "'><strong>+</strong><span>Increase</span></a>";
-        html += "</div>";
-        html += "</div>";
-    }
+    html += R"rawliteral(
+        <section class="robot-card">
+        <div class="pin-map">
+            <div class="pin-pill"><strong>D26</strong><span>Servo 0</span></div>
+            <div class="pin-pill"><strong>D25</strong><span>Servo 1</span></div>
+            <div class="pin-pill"><strong>D18</strong><span>Servo 2</span></div>
+            <div class="pin-pill"><strong>D19</strong><span>Servo 3</span></div>
+            <div class="pin-pill"><strong>D32</strong><span>Servo 4</span></div>
+            <div class="pin-pill"><strong>D33</strong><span>Servo 5</span></div>
+            <div class="pin-pill"><strong>D5</strong><span>Servo 6</span></div>
+            <div class="pin-pill"><strong>D21</strong><span>Servo 7</span></div>
+        </div>
+        <div class="robot-map">
+            <div class="orientation front-label">Front</div>
+            <div class="orientation rear-label">Rear</div>
+            <div class="link link-fl"></div>
+            <div class="link link-fr"></div>
+            <div class="link link-rl"></div>
+            <div class="link link-rr"></div>
+            <div class="leg leg-left leg-front"></div>
+            <div class="leg leg-right leg-front"></div>
+            <div class="leg leg-left leg-rear"></div>
+            <div class="leg leg-right leg-rear"></div>
+            <div class="body-shell"><div class="pcb-label">KAME32</div></div>
+    )rawliteral";
 
-    html += "</div>";
+    appendServoControl(html, 2, "Front left outer", "D18", "servo-front-left-outer");
+    appendServoControl(html, 0, "Front left inner", "D26", "servo-front-left-inner");
+    appendServoControl(html, 1, "Front right inner", "D25", "servo-front-right-inner");
+    appendServoControl(html, 3, "Front right outer", "D19", "servo-front-right-outer");
+    appendServoControl(html, 6, "Rear left outer", "D5", "servo-rear-left-outer");
+    appendServoControl(html, 4, "Rear left inner", "D32", "servo-rear-left-inner");
+    appendServoControl(html, 5, "Rear right inner", "D33", "servo-rear-right-inner");
+    appendServoControl(html, 7, "Rear right outer", "D21", "servo-rear-right-outer");
+
+    html += R"rawliteral(
+        </div>
+        </section>
+    )rawliteral";
     html += "<div class='page-actions'>";
     html += "<a class='btn secondary' href='/calibration/load'><strong>Load</strong><span>Memory</span></a>";
     html += "<a class='btn' href='/calibration/save'><strong>Save</strong><span>Memory</span></a>";
